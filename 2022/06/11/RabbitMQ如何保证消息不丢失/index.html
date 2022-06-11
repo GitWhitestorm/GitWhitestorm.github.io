@@ -1,0 +1,719 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/dial.png">
+  <link rel="icon" href="/img/dial.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="whitestorm">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="RabbitMQ模型   一条的消息的发送会经历3个过程   生产者讲消息发送到Exchange中 Exchange将消息路由到Queue中 消费者再去订阅想要的Queue获取消息  可能造成信息丢失的情况 生产者发送消息由于网络波动，未能成功将信息发送到Exchange，或者发送到一个不存在的Exchange中 路由失败，Exchange未能找到相应的Queue，或者该Exchange没有绑">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RabbitMQ如何保证消息不丢失">
+<meta property="og:url" content="http://example.com/2022/06/11/RabbitMQ%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E5%A4%B1/index.html">
+<meta property="og:site_name" content="Whitestorm&#39;s Blog">
+<meta property="og:description" content="RabbitMQ模型   一条的消息的发送会经历3个过程   生产者讲消息发送到Exchange中 Exchange将消息路由到Queue中 消费者再去订阅想要的Queue获取消息  可能造成信息丢失的情况 生产者发送消息由于网络波动，未能成功将信息发送到Exchange，或者发送到一个不存在的Exchange中 路由失败，Exchange未能找到相应的Queue，或者该Exchange没有绑">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/img/RabbitMQ-Go.png">
+<meta property="article:published_time" content="2022-06-11T06:23:08.000Z">
+<meta property="article:modified_time" content="2022-06-11T09:04:43.445Z">
+<meta property="article:author" content="whitestorm">
+<meta property="article:tag" content="RabbitMQ">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/img/RabbitMQ-Go.png">
+  
+  
+  
+  <title>RabbitMQ如何保证消息不丢失 - Whitestorm&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hint.css@2/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.1","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Whitestorm</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/wallhaven-rdwjj7.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="RabbitMQ如何保证消息不丢失"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-06-11 14:23" pubdate>
+          2022年6月11日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          28 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">RabbitMQ如何保证消息不丢失</h1>
+            
+            <div class="markdown-body">
+              
+              <meta name="referrer" content="no-referrer" />
+
+<h2 id="RabbitMQ模型"><a href="#RabbitMQ模型" class="headerlink" title="RabbitMQ模型"></a>RabbitMQ模型</h2><p><img src="https://s3.bmp.ovh/imgs/2022/06/11/bd756593db7a3f6e.png" srcset="/img/loading.gif" lazyload alt="RabbitMQ路由模型"></p>
+<blockquote>
+<p> 一条的消息的发送会经历3个过程</p>
+</blockquote>
+<ul>
+<li>生产者讲消息发送到Exchange中</li>
+<li>Exchange将消息路由到Queue中</li>
+<li>消费者再去订阅想要的Queue获取消息</li>
+</ul>
+<h3 id="可能造成信息丢失的情况"><a href="#可能造成信息丢失的情况" class="headerlink" title="可能造成信息丢失的情况"></a>可能造成信息丢失的情况</h3><ul>
+<li>生产者发送消息由于网络波动，未能成功将信息发送到Exchange，或者发送到一个不存在的Exchange中</li>
+<li>路由失败，Exchange未能找到相应的Queue，或者该Exchange没有绑定Queue</li>
+<li>客户端处理消息时失败并没有做出相应的处理，导致信息丢失</li>
+<li>单个RabbitMQ节点宕机，导致没持久化的消息丢失</li>
+</ul>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><h4 id="生产者发送消息到Exchange失败"><a href="#生产者发送消息到Exchange失败" class="headerlink" title="生产者发送消息到Exchange失败"></a>生产者发送消息到Exchange失败</h4><h5 id="通过开启事务解决-性能较差"><a href="#通过开启事务解决-性能较差" class="headerlink" title="通过开启事务解决(性能较差)"></a>通过开启事务解决(性能较差)</h5><ul>
+<li>RabbitMQ事务不想普通事务一样每次都需要声明事务</li>
+<li>RabbitMQ事务开启后每次Rollback或者Commit后都会自动开启新事务</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs go">body := <span class="hljs-string">&quot;tx-rollback&quot;</span><br>	<span class="hljs-comment">// 发送无交换机指定路由key的信息</span><br>	<span class="hljs-comment">// exchange为交换机名字</span><br>	<span class="hljs-comment">// routing key为路由键</span><br>	<span class="hljs-comment">// mandatory</span><br>	err = ch.Publish(<br>		<span class="hljs-string">&quot;&quot;</span>,         <span class="hljs-comment">// exchange</span><br>		queue.Name, <span class="hljs-comment">// routing key</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">//mandatory</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// immediate</span><br>		amqp.Publishing&#123;<br>			ContentType: <span class="hljs-string">&quot;text/plain&quot;</span>,<br>			Body:        []<span class="hljs-type">byte</span>(body),<br>		&#125;)<br>	failOnError(err, <span class="hljs-string">&quot;Failed to publish a message&quot;</span>)<br>	ch.TxRollback()<br>	body = <span class="hljs-string">&quot;tx-commit&quot;</span><br>	err = ch.Publish(<br>		<span class="hljs-string">&quot;&quot;</span>,         <span class="hljs-comment">// exchange</span><br>		queue.Name, <span class="hljs-comment">// routing key</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">//mandatory</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// immediate</span><br>		amqp.Publishing&#123;<br>			ContentType: <span class="hljs-string">&quot;text/plain&quot;</span>,<br>			Body:        []<span class="hljs-type">byte</span>(body),<br>		&#125;)<br>	failOnError(err, <span class="hljs-string">&quot;Failed to publish a message&quot;</span>)<br>	ch.TxCommit()<br></code></pre></td></tr></table></figure>
+
+<h5 id="confirm机制"><a href="#confirm机制" class="headerlink" title="confirm机制"></a>confirm机制</h5><blockquote>
+<p>与事务方式不同的是事务每次commit或者rollback后必须等待RabbitMQ的响应，不能继续发送，confirm开启后，每次发送消息时都会生成一个唯一ID，如果消息投递成功，RabbitMQ会返回一个一个ACK确认，通过唯一ID就能知道哪条消息发送成功了</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 开启confirm</span><br>&#123;	err = ch.Confirm(<span class="hljs-literal">false</span>)<br>	failOnError(err, <span class="hljs-string">&quot;Failed to open confirm&quot;</span>)<br>	confirms := ch.NotifyPublish(<span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> amqp.Confirmation, <span class="hljs-number">100</span>))<br>	<span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++ &#123;<br>		body := <span class="hljs-string">&quot;confirm-&quot;</span> + strconv.Itoa(i)<br>		err = ch.Publish(<br>			<span class="hljs-string">&quot;&quot;</span>,         <span class="hljs-comment">// exchange</span><br>			queue.Name, <span class="hljs-comment">// routing key</span><br>			<span class="hljs-literal">false</span>,      <span class="hljs-comment">//mandatory</span><br>			<span class="hljs-literal">false</span>,      <span class="hljs-comment">// immediate</span><br>			amqp.Publishing&#123;<br>				ContentType: <span class="hljs-string">&quot;text/plain&quot;</span>,<br>				Body:        []<span class="hljs-type">byte</span>(body),<br>			&#125;)<br>		failOnError(err, <span class="hljs-string">&quot;Failed to publish a message&quot;</span>)<br><br>	&#125;<br>	conFirmMsg(confirms)<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">conFirmMsg</span><span class="hljs-params">(confirms &lt;-<span class="hljs-keyword">chan</span> amqp.Confirmation)</span></span> &#123;<br>	<span class="hljs-keyword">for</span> confirm := <span class="hljs-keyword">range</span> confirms &#123;<br>		<span class="hljs-keyword">if</span> confirm.Ack &#123;<br>			fmt.Println(<span class="hljs-string">&quot;confirmed delivery with delivery tag: &quot;</span>, confirm.DeliveryTag)<br>		&#125; <span class="hljs-keyword">else</span> &#123;<br>			fmt.Println(<span class="hljs-string">&quot;confirmed delivery of delivery tag: &quot;</span>, confirm.DeliveryTag)<br>		&#125;<br>	&#125;<br><br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<h4 id="Exchange路由到Queue失败"><a href="#Exchange路由到Queue失败" class="headerlink" title="Exchange路由到Queue失败"></a>Exchange路由到Queue失败</h4><ul>
+<li>在生产者发送信息时，将<code>mandatory</code>参数设置为<code>true</code></li>
+<li>当Exchange根据routingKey找不到对应的Queue时，会将消息返回给生产者</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++ &#123;<br>		body := <span class="hljs-string">&quot;not access to queue-&quot;</span> + strconv.Itoa(i)<br>		err = ch.Publish(<br>			<span class="hljs-string">&quot;&quot;</span>,                <span class="hljs-comment">// exchange</span><br>			<span class="hljs-string">&quot;errorRoutingKey&quot;</span>, <span class="hljs-comment">// routing key</span><br>			<span class="hljs-literal">true</span>,              <span class="hljs-comment">//mandatory</span><br>			<span class="hljs-literal">false</span>,             <span class="hljs-comment">// immediate</span><br>			amqp.Publishing&#123;<br>				ContentType: <span class="hljs-string">&quot;text/plain&quot;</span>,<br>				Body:        []<span class="hljs-type">byte</span>(body),<br>			&#125;)<br>		failOnError(err, <span class="hljs-string">&quot;Failed to publish a message&quot;</span>)<br><br>	&#125;<br>	<span class="hljs-comment">// 设置回调函数  相当于java里面的 channel.addReturnListener</span><br>	rets := ch.NotifyReturn(<span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> amqp.Return, <span class="hljs-number">10</span>))<br>	<span class="hljs-keyword">for</span> ret := <span class="hljs-keyword">range</span> rets &#123;<br>		fmt.Println(<span class="hljs-type">string</span>(ret.Body))<br>	&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="消息未持久化服务，服务宕机消息丢失"><a href="#消息未持久化服务，服务宕机消息丢失" class="headerlink" title="消息未持久化服务，服务宕机消息丢失"></a>消息未持久化服务，服务宕机消息丢失</h4><ul>
+<li>将Exchange和Queue都持久化</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs go">queue, err := ch.QueueDeclare(<br>		<span class="hljs-string">&quot;hello&quot;</span>, <span class="hljs-comment">// name</span><br>		<span class="hljs-literal">true</span>,    <span class="hljs-comment">// durable</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// autoDelete</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// exclusive</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// noWait</span><br>		<span class="hljs-literal">nil</span>,     <span class="hljs-comment">// args</span><br>	)<br>	err = ch.ExchangeDeclare(<br>		<span class="hljs-string">&quot;exchange_hello&quot;</span>, <span class="hljs-comment">// name</span><br>		<span class="hljs-string">&quot;fanout&quot;</span>,         <span class="hljs-comment">// type</span><br>		<span class="hljs-literal">true</span>,             <span class="hljs-comment">// durable</span><br>		<span class="hljs-literal">false</span>,            <span class="hljs-comment">// autoDelete</span><br>		<span class="hljs-literal">false</span>,            <span class="hljs-comment">// internal</span><br>		<span class="hljs-literal">false</span>,            <span class="hljs-comment">// noWait</span><br>		<span class="hljs-literal">nil</span>,              <span class="hljs-comment">// args</span><br>	)<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="消费者获取消息后处理消息失败"><a href="#消费者获取消息后处理消息失败" class="headerlink" title="消费者获取消息后处理消息失败"></a>消费者获取消息后处理消息失败</h4><ul>
+<li>手动ACK</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs go">msgs, err := ch.Consume(<br>	queue.Name, <span class="hljs-comment">// queue</span><br>	<span class="hljs-string">&quot;&quot;</span>,         <span class="hljs-comment">// consumer</span><br>	<span class="hljs-literal">false</span>,       <span class="hljs-comment">// auto-ack</span><br>	<span class="hljs-literal">false</span>,      <span class="hljs-comment">// exclusive</span><br>	<span class="hljs-literal">false</span>,      <span class="hljs-comment">// no-local</span><br>	<span class="hljs-literal">false</span>,      <span class="hljs-comment">// no-wait</span><br>	<span class="hljs-literal">nil</span>,        <span class="hljs-comment">// args</span><br>)<br>failOnError(err, <span class="hljs-string">&quot;Failed to register a consumer&quot;</span>)<br><span class="hljs-comment">// 用于阻塞主线程接收</span><br>forever := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> <span class="hljs-type">bool</span>)<br><span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>	<span class="hljs-keyword">for</span> msg := <span class="hljs-keyword">range</span> msgs &#123;<br>		<span class="hljs-comment">// 为True确认当前所有未确认的消息</span><br>		<span class="hljs-comment">// 未False确认当前消息</span><br>		msg.Ack(<span class="hljs-literal">false</span>)<br>		log.Println(<span class="hljs-string">&quot;Received a message&quot;</span>, <span class="hljs-type">string</span>(msg.Body))<br>	&#125;<br>&#125;()<br></code></pre></td></tr></table></figure>
+
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/RabbitMQ/">#RabbitMQ</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>RabbitMQ如何保证消息不丢失</div>
+      <div>http://example.com/2022/06/11/RabbitMQ如何保证消息不丢失/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>whitestorm</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年6月11日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/06/11/RabbitMQ%E5%9C%A8Go%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E4%BD%BF%E7%94%A8/" title="RabbitMQ在Go语言中的使用">
+                        <span class="hidden-mobile">RabbitMQ在Go语言中的使用</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/GitWhitestorm" target="_blank" rel="nofollow noopener"><span>whitestorm</span></a> <i class="iconfont icon-code"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
