@@ -1,0 +1,852 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/dial.png">
+  <link rel="icon" href="/img/dial.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="whitestorm">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="初识protobuf Protocol buffers are Google’s language-neutral, platform-neutral, extensible mechanism for serializing structured data – think XML, but smaller, faster, and simpler. You define how you want">
+<meta property="og:type" content="article">
+<meta property="og:title" content="初识protobuf">
+<meta property="og:url" content="http://example.com/2022/04/11/protobuf%E5%9C%A8go%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="Whitestorm&#39;s Blog">
+<meta property="og:description" content="初识protobuf Protocol buffers are Google’s language-neutral, platform-neutral, extensible mechanism for serializing structured data – think XML, but smaller, faster, and simpler. You define how you want">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/img/%E5%88%9D%E8%AF%86protobuf_.png">
+<meta property="article:published_time" content="2022-04-11T04:49:31.000Z">
+<meta property="article:modified_time" content="2022-06-06T00:13:56.083Z">
+<meta property="article:author" content="whitestorm">
+<meta property="article:tag" content="protobuf">
+<meta property="article:tag" content="数据传输">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/img/%E5%88%9D%E8%AF%86protobuf_.png">
+  
+  
+  
+  <title>初识protobuf - Whitestorm&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hint.css@2/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.1","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Whitestorm</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/wallhaven-rdwjj7.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="初识protobuf"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-04-11 12:49" pubdate>
+          2022年4月11日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          23 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">初识protobuf</h1>
+            
+            <div class="markdown-body">
+              
+              <h1 id="初识protobuf"><a href="#初识protobuf" class="headerlink" title="初识protobuf"></a>初识protobuf</h1><blockquote>
+<p>Protocol buffers are Google’s language-neutral, platform-neutral, extensible mechanism for serializing structured data – think XML, but smaller, faster, and simpler. You define how you want your data to be structured once, then you can use special generated source code to easily write and read your structured data to and from a variety of data streams and using a variety of languages.</p>
+</blockquote>
+<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><ul>
+<li><p>进入<a target="_blank" rel="noopener" href="https://github.com/protocolbuffers/protobuf/releases">下载地址</a>选择对应的系统版本和语言下载</p>
+</li>
+<li><p>双击解压</p>
+</li>
+<li><p>并将其配置到系统环境变量中</p>
+</li>
+<li><p>控制台输入protoc –version查看是否安装成功</p>
+</li>
+<li><p>安装go语言版本的代码生成插件<code>go get github.com/golang/protobuf/protoc-gen-go</code></p>
+</li>
+</ul>
+<h2 id="基本语法"><a href="#基本语法" class="headerlink" title="基本语法"></a>基本语法</h2><h3 id="定义消息类型"><a href="#定义消息类型" class="headerlink" title="定义消息类型"></a>定义消息类型</h3><figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs protobuf">syntax = <span class="hljs-string">&quot;proto3&quot;</span>;<br><span class="hljs-keyword">option</span> go_package=<span class="hljs-string">&quot;./;hello&quot;</span>;<br><span class="hljs-keyword">message </span><span class="hljs-title class_">SearchRequest</span>&#123;<br>    <span class="hljs-type">string</span> query = <span class="hljs-number">1</span>;<br>    <span class="hljs-type">int32</span> page_number = <span class="hljs-number">2</span>;<br>    <span class="hljs-type">int32</span> result_per_page = <span class="hljs-number">3</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><p><code>syntax = &quot;proto3&quot;;</code>表示使用的是proto3语法，如果没有这一句的话默认使用的是proto2的语法</p>
+</li>
+<li><p><code>SearchRequest</code>表示该消息的名字</p>
+</li>
+<li><p>消息包含的三个字段，并非传统的键值对，例如<code>string query=1</code>表示字段的类型是string，字段的名字是query，字段编号是1</p>
+</li>
+<li><p><code>option go_package</code>中两个参数<code>./</code>和<code>hello</code>，分别表示生成的go文件的存放地址和go文件所属的包名</p>
+</li>
+</ul>
+<h4 id="字段类型"><a href="#字段类型" class="headerlink" title="字段类型"></a>字段类型</h4><ul>
+<li>示例中的三个字段都为标量字段，也可是枚举或者自定义的复合类型</li>
+</ul>
+<h4 id="字段编号"><a href="#字段编号" class="headerlink" title="字段编号"></a>字段编号</h4><ul>
+<li>消息定义中的每个字段都需要一个<strong>唯一</strong>的编号，这些编号是在消息二进制序列化标识字段的</li>
+<li>编号的范围为1~2^29-1</li>
+<li>不能使用19000~19999，这些是protobuf内置的保留字段编号</li>
+<li>同样的，也不能使用自己的保留字段编号</li>
+</ul>
+<h4 id="字段规则"><a href="#字段规则" class="headerlink" title="字段规则"></a>字段规则</h4><ul>
+<li>字段默认出现为0或1次</li>
+<li><code>repeated</code>：该字段可以在消息中出现重复任意次数（包括零次）。重复值的顺序将被保留。只能标量类型字段使用</li>
+<li>字段规则加在类型前面</li>
+</ul>
+<h4 id="保留字段"><a href="#保留字段" class="headerlink" title="保留字段"></a>保留字段</h4><blockquote>
+<p>即不能使用的字段编号或字段名称，否则编译器就会报错</p>
+</blockquote>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs protobuf"><span class="hljs-keyword">message </span><span class="hljs-title class_">Foo</span> &#123;<br>  reserved <span class="hljs-number">2</span>, <span class="hljs-number">15</span>, <span class="hljs-number">9</span> to <span class="hljs-number">11</span>;<br>  reserved <span class="hljs-string">&quot;foo&quot;</span>, <span class="hljs-string">&quot;bar&quot;</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><p>编译该段proto程序</p>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs protobuf">syntax = <span class="hljs-string">&quot;proto3&quot;</span>;<br><span class="hljs-keyword">option</span> go_package=<span class="hljs-string">&quot;./;hello&quot;</span>;<br><span class="hljs-keyword">message </span><span class="hljs-title class_">SearchRequest</span>&#123;<br>    <span class="hljs-type">string</span> query = <span class="hljs-number">1</span>;<br>    <span class="hljs-type">int32</span> page_number = <span class="hljs-number">2</span>;<br>    <span class="hljs-type">int32</span> result_per_page = <span class="hljs-number">3</span>;<br>    reserved <span class="hljs-number">2</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>会出现错误信息</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hello.proto: Field <span class="hljs-string">&quot;page_number&quot;</span> uses reserved number 2.<br></code></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="proto类型和go类型对比"><a href="#proto类型和go类型对比" class="headerlink" title="proto类型和go类型对比"></a>proto类型和go类型对比</h3><table>
+<thead>
+<tr>
+<th align="center">.proto Type</th>
+<th align="center">Go Type</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">double</td>
+<td align="center">float64</td>
+</tr>
+<tr>
+<td align="center">float</td>
+<td align="center">float32</td>
+</tr>
+<tr>
+<td align="center">int32</td>
+<td align="center">int32</td>
+</tr>
+<tr>
+<td align="center">int64</td>
+<td align="center">int64</td>
+</tr>
+<tr>
+<td align="center">uint32</td>
+<td align="center">uint32</td>
+</tr>
+<tr>
+<td align="center">uint64</td>
+<td align="center">uint64</td>
+</tr>
+<tr>
+<td align="center">sint32</td>
+<td align="center">int32</td>
+</tr>
+<tr>
+<td align="center">sint64</td>
+<td align="center">int64</td>
+</tr>
+<tr>
+<td align="center">fixed32</td>
+<td align="center">uint32</td>
+</tr>
+<tr>
+<td align="center">fixed64</td>
+<td align="center">uint64</td>
+</tr>
+<tr>
+<td align="center">sfixed32</td>
+<td align="center">int32</td>
+</tr>
+<tr>
+<td align="center">sfixed64</td>
+<td align="center">int64</td>
+</tr>
+<tr>
+<td align="center">bool</td>
+<td align="center">bool</td>
+</tr>
+<tr>
+<td align="center">string</td>
+<td align="center">string</td>
+</tr>
+<tr>
+<td align="center">bytes</td>
+<td align="center">[]byte</td>
+</tr>
+</tbody></table>
+<h3 id="默认值"><a href="#默认值" class="headerlink" title="默认值"></a>默认值</h3><blockquote>
+<p>解析编码时，如果字段没有被赋值，则使用默认值</p>
+</blockquote>
+<ul>
+<li>对于字符串，默认值为空字符串。</li>
+<li>对于字节，默认值为空字节。</li>
+<li>对于布尔值，默认值为 false。</li>
+<li>对于数字类型，默认值为零。</li>
+<li>对于enums，默认值是第一个定义的 enum value，它必须是 0。</li>
+</ul>
+<h3 id="枚举"><a href="#枚举" class="headerlink" title="枚举"></a>枚举</h3><blockquote>
+<p>枚举第一个元素必须为0</p>
+</blockquote>
+<ul>
+<li><p>消息中的枚举</p>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs protobuf"><span class="hljs-keyword">message </span><span class="hljs-title class_">SearchRequest</span> &#123;<br>  <span class="hljs-keyword">enum </span><span class="hljs-title class_">Corpus</span> &#123;<br>    UNIVERSAL = <span class="hljs-number">0</span>;<br>    WEB = <span class="hljs-number">1</span>;<br>    IMAGES = <span class="hljs-number">2</span>;<br>    LOCAL = <span class="hljs-number">3</span>;<br>    NEWS = <span class="hljs-number">4</span>;<br>    PRODUCTS = <span class="hljs-number">5</span>;<br>    VIDEO = <span class="hljs-number">6</span>;<br>  &#125;<br>  Corpus corpus = <span class="hljs-number">1</span>;<br>&#125;<br></code></pre></td></tr></table></figure></li>
+<li><p>对于消息中的枚举（如上面的枚举），类型名称以消息名称开头：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> SearchRequest_Corpus <span class="hljs-type">int32</span><br></code></pre></td></tr></table></figure></li>
+<li><p>对于包级的枚举</p>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs protobuf"><span class="hljs-keyword">enum </span><span class="hljs-title class_">Foo</span> &#123;<br>  DEFAULT_BAR = <span class="hljs-number">0</span>;<br>  BAR_BELLS = <span class="hljs-number">1</span>;<br>  BAR_B_CUE = <span class="hljs-number">2</span>;<br>&#125;<br></code></pre></td></tr></table></figure></li>
+<li><p>类型名称则为原始枚举名称</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Foo <span class="hljs-type">int32</span><br></code></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="使用其他消息类型"><a href="#使用其他消息类型" class="headerlink" title="使用其他消息类型"></a>使用其他消息类型</h3><figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs protobuf"><span class="hljs-keyword">message </span><span class="hljs-title class_">SearchResponse</span> &#123;<br>  <span class="hljs-keyword">repeated</span> Result results = <span class="hljs-number">1</span>;<br>&#125;<br><br><span class="hljs-keyword">message </span><span class="hljs-title class_">Result</span> &#123;<br>  <span class="hljs-type">string</span> url = <span class="hljs-number">1</span>;<br>  <span class="hljs-type">string</span> title = <span class="hljs-number">2</span>;<br>  <span class="hljs-keyword">repeated</span> <span class="hljs-type">string</span> snippets = <span class="hljs-number">3</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="嵌套类型"><a href="#嵌套类型" class="headerlink" title="嵌套类型"></a>嵌套类型</h3><figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs protobuf"><span class="hljs-keyword">message </span><span class="hljs-title class_">SearchResponse</span> &#123;<br>  <span class="hljs-keyword">message </span><span class="hljs-title class_">Result</span> &#123;<br>    <span class="hljs-type">string</span> url = <span class="hljs-number">1</span>;<br>    <span class="hljs-type">string</span> title = <span class="hljs-number">2</span>;<br>    <span class="hljs-keyword">repeated</span> <span class="hljs-type">string</span> snippets = <span class="hljs-number">3</span>;<br>  &#125;<br>  <span class="hljs-keyword">repeated</span> Result results = <span class="hljs-number">1</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="map"><a href="#map" class="headerlink" title="map"></a>map</h3><figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs protobuf">map&lt;key_type, value_type&gt; map_field = N;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>map字段不能是<code>repeated</code></li>
+<li>map中的key可以是除enum和float之外的任何标量</li>
+</ul>
+<h3 id="Service"><a href="#Service" class="headerlink" title="Service"></a>Service</h3><figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs protobuf"><span class="hljs-keyword">service </span><span class="hljs-title class_">SearchService</span> &#123;<br>  <span class="hljs-function"><span class="hljs-keyword">rpc</span> Search(SearchRequest) <span class="hljs-keyword">returns</span> (SearchResponse)</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><p>利用grpc插件生成代码</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ protoc --go_out=plugins=grpc:. hello.proto<br></code></pre></td></tr></table></figure></li>
+</ul>
+<p>参考：</p>
+<p>[1]<a target="_blank" rel="noopener" href="https://developers.google.cn/protocol-buffers/docs/proto3">https://developers.google.cn/protocol-buffers/docs/proto3</a></p>
+<p>[2]<a target="_blank" rel="noopener" href="https://developers.google.cn/protocol-buffers/docs/reference/go-generated">https://developers.google.cn/protocol-buffers/docs/reference/go-generated</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Golang/" class="category-chain-item">Golang</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Golang/protobuf/" class="category-chain-item">protobuf</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/protobuf/">#protobuf</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/">#数据传输</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>初识protobuf</div>
+      <div>http://example.com/2022/04/11/protobuf在go语言中的使用/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>whitestorm</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年4月11日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/04/15/protobuf%E5%9C%A8grpc%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/" title="protobuf在gRPC中的应用">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">protobuf在gRPC中的应用</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/04/07/Redis%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E9%97%AE%E9%A2%98/" title="Redis缓存一致性问题">
+                        <span class="hidden-mobile">Redis缓存一致性问题</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/GitWhitestorm" target="_blank" rel="nofollow noopener"><span>whitestorm</span></a> <i class="iconfont icon-code"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,780 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/dial.png">
+  <link rel="icon" href="/img/dial.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="whitestorm">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="protobuf在gRPC中的应用 前面已经介绍了protobuf，这里我们先介绍了gRPC，了解gRPC前先了解下什么是RPC  RPC RPC也就是remote procedure call 翻译过来就是远程过程调用，RPC是一种概念，grpc实现rpc的一种框架    stub是桩代码的意思，可以理解为存根 client stub：存放服务端的地址消息，再将客户端的请求参数打包成网络消息，然">
+<meta property="og:type" content="article">
+<meta property="og:title" content="protobuf在gRPC中的应用">
+<meta property="og:url" content="http://example.com/2022/04/15/protobuf%E5%9C%A8grpc%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/index.html">
+<meta property="og:site_name" content="Whitestorm&#39;s Blog">
+<meta property="og:description" content="protobuf在gRPC中的应用 前面已经介绍了protobuf，这里我们先介绍了gRPC，了解gRPC前先了解下什么是RPC  RPC RPC也就是remote procedure call 翻译过来就是远程过程调用，RPC是一种概念，grpc实现rpc的一种框架    stub是桩代码的意思，可以理解为存根 client stub：存放服务端的地址消息，再将客户端的请求参数打包成网络消息，然">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/img/protobuf%E5%9C%A8gRPC%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8.png">
+<meta property="article:published_time" content="2022-04-15T14:11:57.000Z">
+<meta property="article:modified_time" content="2022-06-06T00:13:55.741Z">
+<meta property="article:author" content="whitestorm">
+<meta property="article:tag" content="protobuf">
+<meta property="article:tag" content="grpc">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/img/protobuf%E5%9C%A8gRPC%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8.png">
+  
+  
+  
+  <title>protobuf在gRPC中的应用 - Whitestorm&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hint.css@2/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.1","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Whitestorm</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/wallhaven-rdwjj7.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="protobuf在gRPC中的应用"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-04-15 22:11" pubdate>
+          2022年4月15日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          5.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          49 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">protobuf在gRPC中的应用</h1>
+            
+            <div class="markdown-body">
+              
+              <h1 id="protobuf在gRPC中的应用"><a href="#protobuf在gRPC中的应用" class="headerlink" title="protobuf在gRPC中的应用"></a>protobuf在gRPC中的应用</h1><blockquote>
+<p>前面已经介绍了protobuf，这里我们先介绍了gRPC，了解gRPC前先了解下什么是RPC</p>
+</blockquote>
+<h2 id="RPC"><a href="#RPC" class="headerlink" title="RPC"></a>RPC</h2><blockquote>
+<p><code>RPC</code>也就是<code>remote procedure call </code>翻译过来就是远程过程调用，RPC是一种概念，grpc实现rpc的一种框架</p>
+</blockquote>
+<p><img src="https://raw.githubusercontent.com/GitWhitestorm/blog-image/master/img/image-20220416093007487.png" srcset="/img/loading.gif" lazyload alt="RPC流程图"></p>
+<ul>
+<li>stub是桩代码的意思，可以理解为存根</li>
+<li>client stub：存放服务端的地址消息，再将客户端的请求参数打包成网络消息，然后通过网络远程发送给服务方。</li>
+<li>server stub：接收客户端发送过来的消息，将消息解包，并调用本地的方法。</li>
+</ul>
+<h3 id="RPC需要解决的三个问题"><a href="#RPC需要解决的三个问题" class="headerlink" title="RPC需要解决的三个问题"></a>RPC需要解决的三个问题</h3><ul>
+<li>通信问题</li>
+<li>序列化和反序列问题</li>
+<li>call ID 映射问题</li>
+</ul>
+<h2 id="protobuf在gRPC中的应用-1"><a href="#protobuf在gRPC中的应用-1" class="headerlink" title="protobuf在gRPC中的应用"></a>protobuf在gRPC中的应用</h2><blockquote>
+<p>protobuf在gRPC中的角色的接口定义语言，即解决的是序列化和反序列化的问题,而对于protobu来说，gprc只是生成service代码的一种工具</p>
+</blockquote>
+<h3 id="定义接口"><a href="#定义接口" class="headerlink" title="定义接口"></a>定义接口</h3><ul>
+<li>新建hello.proto</li>
+</ul>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs protobuf">syntax = <span class="hljs-string">&quot;proto3&quot;</span>;<br><span class="hljs-keyword">option</span> go_package=<span class="hljs-string">&quot;./;hello&quot;</span>;<br><span class="hljs-keyword">service </span><span class="hljs-title class_">HelloService</span> &#123;<br>    <span class="hljs-function"><span class="hljs-keyword">rpc</span> SayHello (HelloRequest) <span class="hljs-keyword">returns</span> (HelloResponse)</span>;<br>&#125;<br>  <br>  <span class="hljs-keyword">message </span><span class="hljs-title class_">HelloRequest</span> &#123;<br>    <span class="hljs-type">string</span> greeting = <span class="hljs-number">1</span>;<br>&#125;<br>  <br>  <span class="hljs-keyword">message </span><span class="hljs-title class_">HelloResponse</span> &#123;<br>    <span class="hljs-type">string</span> reply = <span class="hljs-number">1</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="生成接口代码"><a href="#生成接口代码" class="headerlink" title="生成接口代码"></a>生成接口代码</h3><ul>
+<li><p>运行bash命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ protoc --go_out=plugins=grpc:. .\hello.proto<br></code></pre></td></tr></table></figure></li>
+<li><p>得到hello.pb.go文件</p>
+</li>
+</ul>
+<h3 id="调用接口"><a href="#调用接口" class="headerlink" title="调用接口"></a>调用接口</h3><h4 id="server代码"><a href="#server代码" class="headerlink" title="server代码"></a>server代码</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> (<br>	port = flag.Int(<span class="hljs-string">&quot;port&quot;</span>, <span class="hljs-number">50051</span>, <span class="hljs-string">&quot;The server port&quot;</span>)<br>)<br><br><span class="hljs-keyword">type</span> server <span class="hljs-keyword">struct</span> &#123;<br>	<span class="hljs-comment">// can be embedded to have forward compatible implementations.</span><br>	helloworld.UnimplementedGreeterServer<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s *server)</span></span> SayHello(ctx context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, <span class="hljs-type">error</span>) &#123;<br>	log.Printf(<span class="hljs-string">&quot;Received:%v&quot;</span>, in.GetName())<br>	<span class="hljs-keyword">return</span> &amp;helloworld.HelloReply&#123;Message: <span class="hljs-string">&quot;Hello&quot;</span> + in.GetName()&#125;, <span class="hljs-literal">nil</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	flag.Parse()<br>	lis, err := net.Listen(<span class="hljs-string">&quot;tcp&quot;</span>, fmt.Sprintf(<span class="hljs-string">&quot;:%d&quot;</span>, *port))<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatalf(<span class="hljs-string">&quot;failed to listen:%v&quot;</span>, err)<br>	&#125;<br><br>	s := grpc.NewServer()<br>	helloworld.RegisterGreeterServer(s, &amp;server&#123;&#125;)<br>	log.Printf(<span class="hljs-string">&quot;server listening at %v&quot;</span>, lis.Addr())<br>	<span class="hljs-keyword">if</span> err := s.Serve(lis); err != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatalf(<span class="hljs-string">&quot;failed to serve:%v&quot;</span>, err)<br>	&#125;<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<h4 id="client代码"><a href="#client代码" class="headerlink" title="client代码"></a>client代码</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">const</span> (<br>	defaultName = <span class="hljs-string">&quot;world&quot;</span><br>)<br><br><span class="hljs-keyword">var</span> (<br>	addr = flag.String(<span class="hljs-string">&quot;addr&quot;</span>, <span class="hljs-string">&quot;localhost:50051&quot;</span>, <span class="hljs-string">&quot;the address to connet to&quot;</span>)<br>	name = flag.String(<span class="hljs-string">&quot;name&quot;</span>, defaultName, <span class="hljs-string">&quot;Name to greet&quot;</span>)<br>)<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	flag.Parse()<br>	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatalf(<span class="hljs-string">&quot;did not connect :%v&quot;</span>, err)<br>	&#125;<br>	<span class="hljs-keyword">defer</span> conn.Close()<br>	c := helloworld.NewGreeterClient(conn)<br>	ctx, cancel := context.WithTimeout(context.Background(), time.Second)<br>	<span class="hljs-keyword">defer</span> cancel()<br><br>	reply, err := c.SayHello(ctx, &amp;helloworld.HelloRequest&#123;Name: *name&#125;)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatalf(<span class="hljs-string">&quot;could not greet:%v&quot;</span>, err)<br>	&#125;<br>	log.Printf(<span class="hljs-string">&quot;Greeting: %s&quot;</span>, reply.GetMessage())<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="自定义protobu生成代码"><a href="#自定义protobu生成代码" class="headerlink" title="自定义protobu生成代码"></a>自定义protobu生成代码</h2><blockquote>
+<p>Protobuf的protoc编译器是通过插件机制实现对不同语言的支持。比如protoc命令出现<code>--xxx_out</code>格式的参数，那么protoc将首先查询是否有内置的xxx插件，如果没有内置的xxx插件那么将继续查询当前系统中是否存在protoc-gen-xxx命名的可执行程序，最终通过查询到的插件生成代码。对于Go语言的protoc-gen-go插件来说，里面又实现了一层静态插件系统。比如protoc-gen-go内置了一个gRPC插件，用户可以通过<code>--go_out=plugins=grpc</code>参数来生成gRPC相关代码，否则只会针对message生成相关代码。</p>
+</blockquote>
+<p>参考gRPC的源码，插件是有generator.RegisterPlugin函数来的注册的，插件是一个generator.Plugin接口</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// A Plugin provides functionality to add to the output during Go code generation,</span><br><span class="hljs-comment">// such as to produce RPC stubs.</span><br><span class="hljs-keyword">type</span> Plugin <span class="hljs-keyword">interface</span> &#123;<br>	<span class="hljs-comment">// Name identifies the plugin.</span><br>	Name() <span class="hljs-type">string</span><br>	<span class="hljs-comment">// Init is called once after data structures are built but before</span><br>	<span class="hljs-comment">// code generation begins.</span><br>	Init(g *Generator)<br>	<span class="hljs-comment">// Generate produces the code generated by the plugin for this file,</span><br>	<span class="hljs-comment">// except for the imports, by calling the generator&#x27;s methods P, In, and Out.</span><br>	Generate(file *FileDescriptor)<br>	<span class="hljs-comment">// GenerateImports produces the import declarations for this file.</span><br>	<span class="hljs-comment">// It is called after Generate.</span><br>	GenerateImports(file *FileDescriptor)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>Name方法返回插件的名字</li>
+<li>g参数包含proto文件的全部信息</li>
+<li>Generate用于生成主体代码</li>
+<li>GenerateImport生成对应的导入包代码</li>
+</ul>
+<h3 id="插件代码"><a href="#插件代码" class="headerlink" title="插件代码"></a>插件代码</h3><ul>
+<li>新建文件夹custom-plugin</li>
+<li>在custom-plugin中新建文件netRpcPlugin.go</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">package</span> customplugin<br><br><span class="hljs-keyword">import</span> (<br>	<span class="hljs-string">&quot;github.com/golang/protobuf/protoc-gen-go/descriptor&quot;</span><br>	<span class="hljs-string">&quot;github.com/golang/protobuf/protoc-gen-go/generator&quot;</span><br>)<br><br><span class="hljs-comment">// 初始化</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">init</span><span class="hljs-params">()</span></span> &#123;<br>	<span class="hljs-comment">// 注册插件</span><br>	generator.RegisterPlugin(<span class="hljs-built_in">new</span>(netRpcPlugin))<br>&#125;<br><br><span class="hljs-keyword">type</span> netRpcPlugin <span class="hljs-keyword">struct</span> &#123;<br>	*generator.Generator<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *netRpcPlugin)</span></span> Name() <span class="hljs-type">string</span> &#123;<br>	<span class="hljs-keyword">return</span> <span class="hljs-string">&quot;netrpc&quot;</span><br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *netRpcPlugin)</span></span> Init(g *generator.Generator) &#123;<br>	p.Generator = g<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *netRpcPlugin)</span></span> GenerateImports(file *generator.FileDescriptor) &#123;<br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(file.Service) &gt; <span class="hljs-number">0</span> &#123;<br>		p.genImportCode(file)<br>	&#125;<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *netRpcPlugin)</span></span> Generate(file *generator.FileDescriptor) &#123;<br>	<span class="hljs-keyword">for</span> _, svc := <span class="hljs-keyword">range</span> file.Service &#123;<br>		p.genServiceCode(svc)<br>	&#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *netRpcPlugin)</span></span> genImportCode(file *generator.FileDescriptor) &#123;<br>	p.P(<span class="hljs-string">&quot;// TODO:import code&quot;</span>)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *netRpcPlugin)</span></span> genServiceCode(svc *descriptor.ServiceDescriptorProto) &#123;<br>	p.P(<span class="hljs-string">&quot;// TODO:service code,Name = &quot;</span> + svc.GetName())<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<h3 id="编译main代码"><a href="#编译main代码" class="headerlink" title="编译main代码"></a>编译main代码</h3><blockquote>
+<p>因为Go语言的包只能静态导入，我们无法向已经安装的protoc-gen-go添加我们新编写的插件。我们将重新克隆protoc-gen-go对应的main函数</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">package</span> main<br><br><span class="hljs-keyword">import</span> (<br>	<span class="hljs-comment">// 导包初始化</span><br>	_ <span class="hljs-string">&quot;blog/custom-plugin&quot;</span><br>	<span class="hljs-string">&quot;io/ioutil&quot;</span><br>	<span class="hljs-string">&quot;os&quot;</span><br><br>	<span class="hljs-string">&quot;github.com/golang/protobuf/protoc-gen-go/generator&quot;</span><br>	<span class="hljs-string">&quot;google.golang.org/protobuf/proto&quot;</span><br>)<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	g := generator.New()<br><br>	data, err := ioutil.ReadAll(os.Stdin)<br><br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		g.Error(err, <span class="hljs-string">&quot;reading input&quot;</span>)<br>	&#125;<br>	<span class="hljs-keyword">if</span> err := proto.Unmarshal(data, g.Request); err != <span class="hljs-literal">nil</span> &#123;<br>		g.Error(err, <span class="hljs-string">&quot;parsing input proto&quot;</span>)<br>	&#125;<br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(g.Request.FileToGenerate) == <span class="hljs-number">0</span> &#123;<br>		g.Fail(<span class="hljs-string">&quot;no files to generate&quot;</span>)<br>	&#125;<br>	g.CommandLineParameters(g.Request.GetParameter())<br><br>	g.WrapTypes()<br>	g.SetPackageNames()<br>	g.GenerateAllFiles()<br>	data, err = proto.Marshal(g.Response)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		g.Error(err, <span class="hljs-string">&quot;failer to marshal output proto&quot;</span>)<br>	&#125;<br>	_, err = os.Stdout.Write(data)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		g.Error(err, <span class="hljs-string">&quot;failed to write output proto&quot;</span>)<br>	&#125;<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><p>运行bash指令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ go build -o  protoc-gen-go-netrpc.exe .<br></code></pre></td></tr></table></figure>
+
+<p>将生成的程序剪贴到$GOPATH$/bin中</p>
+</li>
+</ul>
+<h3 id="重新编译proto文件"><a href="#重新编译proto文件" class="headerlink" title="重新编译proto文件"></a>重新编译proto文件</h3><ul>
+<li><p>运行bash指令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ protoc --go-netrpc_out=plugins=netrpc:. hello.proto<br></code></pre></td></tr></table></figure>
+
+<p>其中<code>--go-netrpc_out</code>参数告知protoc编译器加载名为protoc-gen-go-netrpc的插件，插件中的<code>plugins=netrpc</code>指示启用内部唯一的名为netrpc的netrpcPlugin插件。在新生成的hello.pb.go文件中将包含增加的注释代码。</p>
+</li>
+</ul>
+<p>参考：</p>
+<ul>
+<li>[1]<a target="_blank" rel="noopener" href="https://grpc.io/docs/languages/go/basics/">https://grpc.io/docs/languages/go/basics/</a></li>
+<li>[2]<a target="_blank" rel="noopener" href="https://chai2010.cn/advanced-go-programming-book/ch4-rpc/ch4-02-pb-intro.html">https://chai2010.cn/advanced-go-programming-book/ch4-rpc/ch4-02-pb-intro.html</a></li>
+</ul>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Golang/" class="category-chain-item">Golang</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Golang/protobuf/" class="category-chain-item">protobuf</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/gRPC/" class="category-chain-item">gRPC</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/protobuf/">#protobuf</a>
+      
+        <a href="/tags/grpc/">#grpc</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>protobuf在gRPC中的应用</div>
+      <div>http://example.com/2022/04/15/protobuf在grpc中的应用/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>whitestorm</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年4月15日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/04/23/HTTP%E5%9F%BA%E6%9C%AC%E7%9F%A5%E8%AF%86%E5%AD%A6%E4%B9%A0/" title="HTTP基本知识学习">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">HTTP基本知识学习</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/04/11/protobuf%E5%9C%A8go%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E4%BD%BF%E7%94%A8/" title="初识protobuf">
+                        <span class="hidden-mobile">初识protobuf</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/GitWhitestorm" target="_blank" rel="nofollow noopener"><span>whitestorm</span></a> <i class="iconfont icon-code"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
