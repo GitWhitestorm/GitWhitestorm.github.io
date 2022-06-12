@@ -16,27 +16,24 @@
   <meta name="author" content="whitestorm">
   <meta name="keywords" content="">
   
-    <meta name="description" content="输入网址到页面显示的过程HTTP客户端 解析URL 生成HTTP报文  DNS（获取IP地址） 查询服务器域名对应的IP地址  TCP（可靠传输） TCP三次握手 如果超过MSS则分片 TCP报文  IP（指路） IP报文生成  MAC（两点传输） 生成MAC报文 ARP协议根据IP找到MAC地址    网卡（出口） 添加报头和起始帧分界符 起始帧分界符是⼀个⽤来表示包起始位置的标记   在末尾添">
+    <meta name="description" content="RabbitMQ如何保证消息不重复消费原因 生产者重复发送消息给RabbitMQ 消费者消费重复消息  解决方案 给消息添加全局ID 消费时利用全局ID去缓存中间件中查找是否已经消费 如果消费则跳过 没有则消费，记录到缓存中间件中    代码 -Go生产者 发送50条消息，其中模拟50条重复发送的消息  123456789101112131415161718192021222324252627">
 <meta property="og:type" content="article">
-<meta property="og:title" content="输入网址到页面显示的过程">
-<meta property="og:url" content="http://example.com/2022/05/01/%E8%BE%93%E5%85%A5%E7%BD%91%E5%9D%80%E5%88%B0%E9%A1%B5%E9%9D%A2%E6%98%BE%E7%A4%BA%E7%9A%84%E8%BF%87%E7%A8%8B/index.html">
+<meta property="og:title" content="RabbitMQ如何保证消息不重复消费">
+<meta property="og:url" content="http://example.com/2022/06/12/RabbitMQ%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%B8%8D%E9%87%8D%E5%A4%8D%E6%B6%88%E8%B4%B9/index.html">
 <meta property="og:site_name" content="Whitestorm&#39;s Blog">
-<meta property="og:description" content="输入网址到页面显示的过程HTTP客户端 解析URL 生成HTTP报文  DNS（获取IP地址） 查询服务器域名对应的IP地址  TCP（可靠传输） TCP三次握手 如果超过MSS则分片 TCP报文  IP（指路） IP报文生成  MAC（两点传输） 生成MAC报文 ARP协议根据IP找到MAC地址    网卡（出口） 添加报头和起始帧分界符 起始帧分界符是⼀个⽤来表示包起始位置的标记   在末尾添">
+<meta property="og:description" content="RabbitMQ如何保证消息不重复消费原因 生产者重复发送消息给RabbitMQ 消费者消费重复消息  解决方案 给消息添加全局ID 消费时利用全局ID去缓存中间件中查找是否已经消费 如果消费则跳过 没有则消费，记录到缓存中间件中    代码 -Go生产者 发送50条消息，其中模拟50条重复发送的消息  123456789101112131415161718192021222324252627">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/img/network.png">
-<meta property="article:published_time" content="2022-05-01T02:18:36.000Z">
-<meta property="article:modified_time" content="2022-06-06T00:13:58.221Z">
+<meta property="og:image" content="http://example.com/img/RabbitMQ-Go.png">
+<meta property="article:published_time" content="2022-06-12T05:05:56.000Z">
+<meta property="article:modified_time" content="2022-06-12T06:42:00.933Z">
 <meta property="article:author" content="whitestorm">
-<meta property="article:tag" content="计算机网络">
-<meta property="article:tag" content="HTTP">
-<meta property="article:tag" content="TCP">
-<meta property="article:tag" content="IP">
+<meta property="article:tag" content="RabbitMQ">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/img/network.png">
+<meta name="twitter:image" content="http://example.com/img/RabbitMQ-Go.png">
   
   
   
-  <title>输入网址到页面显示的过程 - Whitestorm&#39;s Blog</title>
+  <title>RabbitMQ如何保证消息不重复消费 - Whitestorm&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
 
@@ -199,7 +196,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="输入网址到页面显示的过程"></span>
+            <span id="subtitle" data-typed-text="RabbitMQ如何保证消息不重复消费"></span>
           
         </div>
 
@@ -210,8 +207,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-05-01 10:18" pubdate>
-          2022年5月1日 上午
+        <time datetime="2022-06-12 13:05" pubdate>
+          2022年6月12日 下午
         </time>
       </span>
     
@@ -223,7 +220,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          672 字
+          1.8k 字
         
       </span>
     
@@ -235,7 +232,7 @@
         
         
           <!-- compatible with older versions-->
-          6 分钟
+          15 分钟
         
       </span>
     
@@ -273,80 +270,43 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">输入网址到页面显示的过程</h1>
+            <h1 style="display: none">RabbitMQ如何保证消息不重复消费</h1>
             
             <div class="markdown-body">
               
-              <h1 id="输入网址到页面显示的过程"><a href="#输入网址到页面显示的过程" class="headerlink" title="输入网址到页面显示的过程"></a>输入网址到页面显示的过程</h1><h2 id="HTTP客户端"><a href="#HTTP客户端" class="headerlink" title="HTTP客户端"></a>HTTP客户端</h2><ul>
-<li>解析URL</li>
-<li>生成HTTP报文</li>
+              <meta name="referrer" content="no-referrer" />
+
+<h1 id="RabbitMQ如何保证消息不重复消费"><a href="#RabbitMQ如何保证消息不重复消费" class="headerlink" title="RabbitMQ如何保证消息不重复消费"></a>RabbitMQ如何保证消息不重复消费</h1><h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><ul>
+<li>生产者重复发送消息给RabbitMQ</li>
+<li>消费者消费重复消息</li>
 </ul>
-<h2 id="DNS（获取IP地址）"><a href="#DNS（获取IP地址）" class="headerlink" title="DNS（获取IP地址）"></a>DNS（获取IP地址）</h2><ul>
-<li>查询服务器域名对应的IP地址</li>
-</ul>
-<h2 id="TCP（可靠传输）"><a href="#TCP（可靠传输）" class="headerlink" title="TCP（可靠传输）"></a>TCP（可靠传输）</h2><ul>
-<li>TCP三次握手</li>
-<li>如果超过MSS则分片</li>
-<li>TCP报文</li>
-</ul>
-<h2 id="IP（指路）"><a href="#IP（指路）" class="headerlink" title="IP（指路）"></a>IP（指路）</h2><ul>
-<li>IP报文生成</li>
-</ul>
-<h2 id="MAC（两点传输）"><a href="#MAC（两点传输）" class="headerlink" title="MAC（两点传输）"></a>MAC（两点传输）</h2><ul>
-<li>生成MAC报文<ul>
-<li>ARP协议根据IP找到MAC地址</li>
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><ul>
+<li>给消息添加全局ID</li>
+<li>消费时利用全局ID去缓存中间件中查找是否已经消费<ul>
+<li>如果消费则跳过</li>
+<li>没有则消费，记录到缓存中间件中</li>
 </ul>
 </li>
 </ul>
-<h2 id="网卡（出口）"><a href="#网卡（出口）" class="headerlink" title="网卡（出口）"></a>网卡（出口）</h2><ul>
-<li>添加<strong>报头和起始帧分界符</strong><ul>
-<li>起始帧分界符是⼀个⽤来表示包起始位置的标记</li>
+<h2 id="代码-Go"><a href="#代码-Go" class="headerlink" title="代码 -Go"></a>代码 -Go</h2><h3 id="生产者"><a href="#生产者" class="headerlink" title="生产者"></a>生产者</h3><ul>
+<li>发送50条消息，其中模拟50条重复发送的消息</li>
 </ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">1000</span>; i++ &#123;<br>	body := <span class="hljs-string">&quot;message-&quot;</span> + strconv.Itoa(i)<br>	uid := uuid.NewV4().String()<br>	err = ch.Publish(<br>		<span class="hljs-string">&quot;&quot;</span>,      <span class="hljs-comment">// exchange</span><br>		<span class="hljs-string">&quot;hello&quot;</span>, <span class="hljs-comment">// routing key</span><br>		<span class="hljs-literal">true</span>,    <span class="hljs-comment">//mandatory</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// immediate</span><br>		amqp.Publishing&#123;<br>			ContentType: <span class="hljs-string">&quot;text/plain&quot;</span>,<br>			Body:        []<span class="hljs-type">byte</span>(body),<br>			MessageId:   uid,<br>		&#125;)<br><br>	failOnError(err, <span class="hljs-string">&quot;Failed to publish a message&quot;</span>)<br>	<span class="hljs-comment">// 模拟重复信息</span><br>	<span class="hljs-keyword">if</span> i%<span class="hljs-number">10</span> == <span class="hljs-number">0</span> &#123;<br>		err = ch.Publish(<br>			<span class="hljs-string">&quot;&quot;</span>,      <span class="hljs-comment">// exchange</span><br>			<span class="hljs-string">&quot;hello&quot;</span>, <span class="hljs-comment">// routing key</span><br>			<span class="hljs-literal">true</span>,    <span class="hljs-comment">//mandatory</span><br>			<span class="hljs-literal">false</span>,   <span class="hljs-comment">// immediate</span><br>			amqp.Publishing&#123;<br>				ContentType: <span class="hljs-string">&quot;text/plain&quot;</span>,<br>				Body:        []<span class="hljs-type">byte</span>(body + <span class="hljs-string">&quot;:repeated message&quot;</span>),<br>				MessageId:   uid,<br>			&#125;)<br>		failOnError(err, <span class="hljs-string">&quot;Failed to publish a message&quot;</span>)<br><br>	&#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://s3.bmp.ovh/imgs/2022/06/12/b4dda5af14dd664f.png" srcset="/img/loading.gif" lazyload alt="消息队列图"></p>
+<h3 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 再次声明，防止客户端比服务端启动得早，然后取错</span><br>	queue, err := ch.QueueDeclare(<br>		<span class="hljs-string">&quot;hello&quot;</span>, <span class="hljs-comment">// name</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// durable</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// delete when unused</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// exclusive</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// no-wait</span><br>		<span class="hljs-literal">nil</span>,     <span class="hljs-comment">// arguments</span><br>	)<br><br>	failOnError(err, <span class="hljs-string">&quot;Failed to declare a queue&quot;</span>)<br>	msgs, err := ch.Consume(<br>		queue.Name, <span class="hljs-comment">// queue</span><br>		<span class="hljs-string">&quot;&quot;</span>,         <span class="hljs-comment">// consumer</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// auto-ack</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// exclusive</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// no-local</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// no-wait</span><br>		<span class="hljs-literal">nil</span>,        <span class="hljs-comment">// args</span><br>	)<br>	failOnError(err, <span class="hljs-string">&quot;Failed to register a consumer&quot;</span>)<br>	<span class="hljs-comment">// 用于阻塞主线程接收</span><br>	forever := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> <span class="hljs-type">bool</span>)<br>	<span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br><br>		<span class="hljs-keyword">for</span> msg := <span class="hljs-keyword">range</span> msgs &#123;<br>			<span class="hljs-comment">// 存在</span><br>			<span class="hljs-keyword">if</span> ok, _ := redis.Bool(redisConn.Do(<span class="hljs-string">&quot;Get&quot;</span>, msg.MessageId)); ok &#123;<br>				<span class="hljs-keyword">continue</span><br>			&#125; <span class="hljs-keyword">else</span> &#123;<br>				redisConn.Do(<span class="hljs-string">&quot;Set&quot;</span>, msg.MessageId, <span class="hljs-literal">true</span>)<br>				<span class="hljs-comment">// 为True确认当前所有未确认的消息</span><br>				<span class="hljs-comment">// 为False确认当前消息</span><br>				msg.Ack(<span class="hljs-literal">false</span>)<br>				log.Println(<span class="hljs-string">&quot;Received a message,content is:&quot;</span>, <span class="hljs-type">string</span>(msg.Body))<br>			&#125;<br><br>		&#125;<br>	&#125;()<br><br>	log.Printf(<span class="hljs-string">&quot; [*] Waiting for messages. To exit press CTRL+C&quot;</span>)<br>	&lt;-forever<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://s3.bmp.ovh/imgs/2022/06/12/cc7ccc27acc041c0.png" srcset="/img/loading.gif" lazyload alt="消费消息图"></p>
+<ul>
+<li><p>可以看到只有500条消息被消费</p>
 </li>
-<li>在末尾添加<strong>⽤于检测错误的帧校验序列</strong><ul>
-<li>末尾的 FCS （帧校验序列）⽤来检查包传输过程是否有损坏</li>
+<li><p>接下来清楚redis中的缓存</p>
+<p><code>flushdb</code></p>
+</li>
+<li><p>再消费</p>
+</li>
 </ul>
-</li>
-<li>将数字信息转换为电信号</li>
-</ul>
-<p>报头和起始帧分界符</p>
-<h2 id="交换机（交换机本身没有MAC地址）"><a href="#交换机（交换机本身没有MAC地址）" class="headerlink" title="交换机（交换机本身没有MAC地址）"></a>交换机（交换机本身没有MAC地址）</h2><ol>
-<li><p>电信号到达⽹线接⼝，交换机⾥的模块进⾏接收</p>
-</li>
-<li><p>将电信号转换为数字信号</p>
-</li>
-<li><p>进行差错检测，没问题则放到缓存区</p>
-</li>
-<li><p>查询包的接收方MAC地址</p>
-</li>
-<li><p>根据交换机的MAC地址表进行转发</p>
-<p><img src="https://raw.githubusercontent.com/GitWhitestorm/blog-image/master/img/image-20220501141716242.png" srcset="/img/loading.gif" lazyload alt="交换机MAC地址表"></p>
-</li>
-<li><p>如果没有找到，则每个端口都发，只有相应的接收者才接收包，⽽其他设备则会忽略这个包。如果有端口响应了，则返回该将该端口MAC地址写入交换机MAC表</p>
-</li>
-</ol>
-<h2 id="路由器（出境大门）"><a href="#路由器（出境大门）" class="headerlink" title="路由器（出境大门）"></a>路由器（出境大门）</h2><ul>
-<li>路由器有自己的IP和MAC地址，可以作为以太网包的接收方和发送方</li>
-</ul>
-<h3 id="接收"><a href="#接收" class="headerlink" title="接收"></a>接收</h3><ul>
-<li>信号转换：将电信号转换数字信号</li>
-<li>差错检错</li>
-<li>检查MAC头部中的接收方是否是自己的MAC地址，如果是就放入缓冲区，不是就丢弃</li>
-</ul>
-<h3 id="发送"><a href="#发送" class="headerlink" title="发送"></a>发送</h3><h4 id="准备阶段"><a href="#准备阶段" class="headerlink" title="准备阶段"></a>准备阶段</h4><ul>
-<li>查询路由表确定输出端口</li>
-<li>完成接收操作后，路由器会去掉包开头的<code>MAC头部</code></li>
-<li>根据<code>IP头部</code>查看路由器的路由表</li>
-<li>如果匹配到路由，则选择匹配到的路由，如果匹配不到则选择默认路由</li>
-</ul>
-<p><img src="https://raw.githubusercontent.com/GitWhitestorm/blog-image/master/img/image-20220501150206742.png" srcset="/img/loading.gif" lazyload alt="路由表图解"></p>
-<h4 id="发送阶段"><a href="#发送阶段" class="headerlink" title="发送阶段"></a>发送阶段</h4><ul>
-<li>知道对方的IP后，通过ARP协议查询MAC地址，并将结果作为接收方的MAC地址，MAC头部的发送地址则为路由器的地址</li>
-</ul>
-<h2 id="图解"><a href="#图解" class="headerlink" title="图解"></a>图解</h2><p><img src="https://raw.githubusercontent.com/GitWhitestorm/blog-image/master/img/image-20220501153854705.png" srcset="/img/loading.gif" lazyload alt="流程图解"></p>
-<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><ul>
-<li>本篇文章图一、图二来自《图解网络-小林》</li>
-</ul>
+<p><img src="https://s3.bmp.ovh/imgs/2022/06/12/ed0d30a17fef8a38.png" srcset="/img/loading.gif" lazyload alt="重复消息"></p>
 
               
             </div>
@@ -364,7 +324,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" class="category-chain-item">计算机网络</a>
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
   
   
 
@@ -379,13 +339,7 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">#计算机网络</a>
-      
-        <a href="/tags/HTTP/">#HTTP</a>
-      
-        <a href="/tags/TCP/">#TCP</a>
-      
-        <a href="/tags/IP/">#IP</a>
+        <a href="/tags/RabbitMQ/">#RabbitMQ</a>
       
     </div>
   
@@ -397,8 +351,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>输入网址到页面显示的过程</div>
-      <div>http://example.com/2022/05/01/输入网址到页面显示的过程/</div>
+      <div>RabbitMQ如何保证消息不重复消费</div>
+      <div>http://example.com/2022/06/12/RabbitMQ如何保证消息不重复消费/</div>
     </div>
     <div class="license-meta">
       
@@ -410,7 +364,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年5月1日</div>
+          <div>2022年6月12日</div>
         </div>
       
       
@@ -440,18 +394,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/05/07/%E8%B7%B3%E8%A1%A8%EF%BC%88skip-list%EF%BC%89/" title="跳表（skip list）">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">跳表（skip list）</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/04/30/TCP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%86/" title="TCP基本认识">
-                        <span class="hidden-mobile">TCP基本认识</span>
+                      <a href="/2022/06/11/RabbitMQ%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E5%A4%B1/" title="RabbitMQ如何保证消息不丢失">
+                        <span class="hidden-mobile">RabbitMQ如何保证消息不丢失</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
