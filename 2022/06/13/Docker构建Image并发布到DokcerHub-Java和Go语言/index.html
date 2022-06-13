@@ -16,24 +16,24 @@
   <meta name="author" content="whitestorm">
   <meta name="keywords" content="">
   
-    <meta name="description" content="RabbitMQ如何保证消息不重复消费原因 生产者重复发送消息给RabbitMQ 消费者消费重复消息  解决方案 给消息添加全局ID 消费时利用全局ID去缓存中间件中查找是否已经消费 如果消费则跳过 没有则消费，记录到缓存中间件中    代码 -Go生产者 发送50条消息，其中模拟50条重复发送的消息  123456789101112131415161718192021222324252627">
+    <meta name="description" content="Docker构建Image并发布到DokcerHub:Java和Go语言 Docker 是一个开源的应用容器引擎，基于Go语言 并遵从 Apache2.0 协议开源。Docker 可以让开发者打包他们的应用以及依赖包到一个轻量级、可移植的容器中，然后发布到任何流行的 Linux 机器上，也可以实现虚拟化。容器是完全使用沙箱机制，相互之间不会有任何接口（类似 iPhone 的 app）,更重要的">
 <meta property="og:type" content="article">
-<meta property="og:title" content="RabbitMQ如何保证消息不重复消费">
-<meta property="og:url" content="http://example.com/2022/06/12/RabbitMQ%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%B8%8D%E9%87%8D%E5%A4%8D%E6%B6%88%E8%B4%B9/index.html">
+<meta property="og:title" content="Docker构建Image并发布到DokcerHub:Java和Go语言">
+<meta property="og:url" content="http://example.com/2022/06/13/Docker%E6%9E%84%E5%BB%BAImage%E5%B9%B6%E5%8F%91%E5%B8%83%E5%88%B0DokcerHub-Java%E5%92%8CGo%E8%AF%AD%E8%A8%80/index.html">
 <meta property="og:site_name" content="Whitestorm&#39;s Blog">
-<meta property="og:description" content="RabbitMQ如何保证消息不重复消费原因 生产者重复发送消息给RabbitMQ 消费者消费重复消息  解决方案 给消息添加全局ID 消费时利用全局ID去缓存中间件中查找是否已经消费 如果消费则跳过 没有则消费，记录到缓存中间件中    代码 -Go生产者 发送50条消息，其中模拟50条重复发送的消息  123456789101112131415161718192021222324252627">
+<meta property="og:description" content="Docker构建Image并发布到DokcerHub:Java和Go语言 Docker 是一个开源的应用容器引擎，基于Go语言 并遵从 Apache2.0 协议开源。Docker 可以让开发者打包他们的应用以及依赖包到一个轻量级、可移植的容器中，然后发布到任何流行的 Linux 机器上，也可以实现虚拟化。容器是完全使用沙箱机制，相互之间不会有任何接口（类似 iPhone 的 app）,更重要的">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/img/RabbitMQ-Go.png">
-<meta property="article:published_time" content="2022-06-12T05:05:56.000Z">
-<meta property="article:modified_time" content="2022-06-12T06:42:00.933Z">
+<meta property="og:image" content="http://example.com/img/Docker-go-java.png">
+<meta property="article:published_time" content="2022-06-13T00:54:31.000Z">
+<meta property="article:modified_time" content="2022-06-13T05:11:21.468Z">
 <meta property="article:author" content="whitestorm">
-<meta property="article:tag" content="RabbitMQ">
+<meta property="article:tag" content="Docker">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/img/RabbitMQ-Go.png">
+<meta name="twitter:image" content="http://example.com/img/Docker-go-java.png">
   
   
   
-  <title>RabbitMQ如何保证消息不重复消费 - Whitestorm&#39;s Blog</title>
+  <title>Docker构建Image并发布到DokcerHub:Java和Go语言 - Whitestorm&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
 
@@ -196,7 +196,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="RabbitMQ如何保证消息不重复消费"></span>
+            <span id="subtitle" data-typed-text="Docker构建Image并发布到DokcerHub:Java和Go语言"></span>
           
         </div>
 
@@ -207,8 +207,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-06-12 13:05" pubdate>
-          2022年6月12日 下午
+        <time datetime="2022-06-13 08:54" pubdate>
+          2022年6月13日 早上
         </time>
       </span>
     
@@ -220,7 +220,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.8k 字
+          2.2k 字
         
       </span>
     
@@ -232,7 +232,7 @@
         
         
           <!-- compatible with older versions-->
-          15 分钟
+          19 分钟
         
       </span>
     
@@ -270,43 +270,67 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">RabbitMQ如何保证消息不重复消费</h1>
+            <h1 style="display: none">Docker构建Image并发布到DokcerHub:Java和Go语言</h1>
             
             <div class="markdown-body">
               
               <meta name="referrer" content="no-referrer" />
 
-<h1 id="RabbitMQ如何保证消息不重复消费"><a href="#RabbitMQ如何保证消息不重复消费" class="headerlink" title="RabbitMQ如何保证消息不重复消费"></a>RabbitMQ如何保证消息不重复消费</h1><h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><ul>
-<li>生产者重复发送消息给RabbitMQ</li>
-<li>消费者消费重复消息</li>
-</ul>
-<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><ul>
-<li>给消息添加全局ID</li>
-<li>消费时利用全局ID去缓存中间件中查找是否已经消费<ul>
-<li>如果消费则跳过</li>
-<li>没有则消费，记录到缓存中间件中</li>
-</ul>
-</li>
-</ul>
-<h2 id="代码-Go"><a href="#代码-Go" class="headerlink" title="代码 -Go"></a>代码 -Go</h2><h3 id="生产者"><a href="#生产者" class="headerlink" title="生产者"></a>生产者</h3><ul>
-<li>发送50条消息，其中模拟50条重复发送的消息</li>
-</ul>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">1000</span>; i++ &#123;<br>	body := <span class="hljs-string">&quot;message-&quot;</span> + strconv.Itoa(i)<br>	uid := uuid.NewV4().String()<br>	err = ch.Publish(<br>		<span class="hljs-string">&quot;&quot;</span>,      <span class="hljs-comment">// exchange</span><br>		<span class="hljs-string">&quot;hello&quot;</span>, <span class="hljs-comment">// routing key</span><br>		<span class="hljs-literal">true</span>,    <span class="hljs-comment">//mandatory</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// immediate</span><br>		amqp.Publishing&#123;<br>			ContentType: <span class="hljs-string">&quot;text/plain&quot;</span>,<br>			Body:        []<span class="hljs-type">byte</span>(body),<br>			MessageId:   uid,<br>		&#125;)<br><br>	failOnError(err, <span class="hljs-string">&quot;Failed to publish a message&quot;</span>)<br>	<span class="hljs-comment">// 模拟重复信息</span><br>	<span class="hljs-keyword">if</span> i%<span class="hljs-number">10</span> == <span class="hljs-number">0</span> &#123;<br>		err = ch.Publish(<br>			<span class="hljs-string">&quot;&quot;</span>,      <span class="hljs-comment">// exchange</span><br>			<span class="hljs-string">&quot;hello&quot;</span>, <span class="hljs-comment">// routing key</span><br>			<span class="hljs-literal">true</span>,    <span class="hljs-comment">//mandatory</span><br>			<span class="hljs-literal">false</span>,   <span class="hljs-comment">// immediate</span><br>			amqp.Publishing&#123;<br>				ContentType: <span class="hljs-string">&quot;text/plain&quot;</span>,<br>				Body:        []<span class="hljs-type">byte</span>(body + <span class="hljs-string">&quot;:repeated message&quot;</span>),<br>				MessageId:   uid,<br>			&#125;)<br>		failOnError(err, <span class="hljs-string">&quot;Failed to publish a message&quot;</span>)<br><br>	&#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+<h1 id="Docker构建Image并发布到DokcerHub-Java和Go语言"><a href="#Docker构建Image并发布到DokcerHub-Java和Go语言" class="headerlink" title="Docker构建Image并发布到DokcerHub:Java和Go语言"></a>Docker构建Image并发布到DokcerHub:Java和Go语言</h1><blockquote>
+<p>Docker 是一个开源的应用容器引擎，基于Go语言 并遵从 Apache2.0 协议开源。Docker 可以让开发者打包他们的应用以及依赖包到一个轻量级、可移植的容器中，然后发布到任何流行的 Linux 机器上，也可以实现虚拟化。容器是完全使用沙箱机制，相互之间不会有任何接口（类似 iPhone 的 app）,更重要的是容器性能开销极低。</p>
+</blockquote>
+<h2 id="Go语言"><a href="#Go语言" class="headerlink" title="Go语言"></a>Go语言</h2><h3 id="编写简单的Web应用"><a href="#编写简单的Web应用" class="headerlink" title="编写简单的Web应用"></a>编写简单的Web应用</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">package</span> main<br><br><span class="hljs-keyword">import</span> (<br>	<span class="hljs-string">&quot;fmt&quot;</span><br>	<span class="hljs-string">&quot;log&quot;</span><br>	<span class="hljs-string">&quot;net/http&quot;</span><br>)<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	http.HandleFunc(<span class="hljs-string">&quot;/index&quot;</span>, hander)<br>	log.Fatal(http.ListenAndServe(<span class="hljs-string">&quot;:8081&quot;</span>, <span class="hljs-literal">nil</span>))<br>&#125;<br><br><span class="hljs-keyword">var</span> count <span class="hljs-type">int</span><br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">hander</span><span class="hljs-params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;<br>	count++<br>	w.Write([]<span class="hljs-type">byte</span>(<span class="hljs-string">&quot;Hello Dockerfile\n&quot;</span>))<br>	w.Write([]<span class="hljs-type">byte</span>(fmt.Sprintf(<span class="hljs-string">&quot;已访问%d次&quot;</span>, count)))<br>	log.Printf(<span class="hljs-string">&quot;%s:enter the room\n&quot;</span>, r.Host)<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<p><img src="https://s3.bmp.ovh/imgs/2022/06/12/b4dda5af14dd664f.png" srcset="/img/loading.gif" lazyload alt="消息队列图"></p>
-<h3 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 再次声明，防止客户端比服务端启动得早，然后取错</span><br>	queue, err := ch.QueueDeclare(<br>		<span class="hljs-string">&quot;hello&quot;</span>, <span class="hljs-comment">// name</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// durable</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// delete when unused</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// exclusive</span><br>		<span class="hljs-literal">false</span>,   <span class="hljs-comment">// no-wait</span><br>		<span class="hljs-literal">nil</span>,     <span class="hljs-comment">// arguments</span><br>	)<br><br>	failOnError(err, <span class="hljs-string">&quot;Failed to declare a queue&quot;</span>)<br>	msgs, err := ch.Consume(<br>		queue.Name, <span class="hljs-comment">// queue</span><br>		<span class="hljs-string">&quot;&quot;</span>,         <span class="hljs-comment">// consumer</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// auto-ack</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// exclusive</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// no-local</span><br>		<span class="hljs-literal">false</span>,      <span class="hljs-comment">// no-wait</span><br>		<span class="hljs-literal">nil</span>,        <span class="hljs-comment">// args</span><br>	)<br>	failOnError(err, <span class="hljs-string">&quot;Failed to register a consumer&quot;</span>)<br>	<span class="hljs-comment">// 用于阻塞主线程接收</span><br>	forever := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> <span class="hljs-type">bool</span>)<br>	<span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br><br>		<span class="hljs-keyword">for</span> msg := <span class="hljs-keyword">range</span> msgs &#123;<br>			<span class="hljs-comment">// 存在</span><br>			<span class="hljs-keyword">if</span> ok, _ := redis.Bool(redisConn.Do(<span class="hljs-string">&quot;Get&quot;</span>, msg.MessageId)); ok &#123;<br>				<span class="hljs-keyword">continue</span><br>			&#125; <span class="hljs-keyword">else</span> &#123;<br>				redisConn.Do(<span class="hljs-string">&quot;Set&quot;</span>, msg.MessageId, <span class="hljs-literal">true</span>)<br>				<span class="hljs-comment">// 为True确认当前所有未确认的消息</span><br>				<span class="hljs-comment">// 为False确认当前消息</span><br>				msg.Ack(<span class="hljs-literal">false</span>)<br>				log.Println(<span class="hljs-string">&quot;Received a message,content is:&quot;</span>, <span class="hljs-type">string</span>(msg.Body))<br>			&#125;<br><br>		&#125;<br>	&#125;()<br><br>	log.Printf(<span class="hljs-string">&quot; [*] Waiting for messages. To exit press CTRL+C&quot;</span>)<br>	&lt;-forever<br></code></pre></td></tr></table></figure>
+<h3 id="利用Go-Bulid进行交叉编译获得linux程序"><a href="#利用Go-Bulid进行交叉编译获得linux程序" class="headerlink" title="利用Go Bulid进行交叉编译获得linux程序"></a>利用Go Bulid进行交叉编译获得linux程序</h3><ul>
+<li>Mac系统</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build main.go<br></code></pre></td></tr></table></figure>
 
-<p><img src="https://s3.bmp.ovh/imgs/2022/06/12/cc7ccc27acc041c0.png" srcset="/img/loading.gif" lazyload alt="消费消息图"></p>
 <ul>
-<li><p>可以看到只有500条消息被消费</p>
-</li>
-<li><p>接下来清楚redis中的缓存</p>
-<p><code>flushdb</code></p>
-</li>
-<li><p>再消费</p>
-</li>
+<li>Windows系统</li>
 </ul>
-<p><img src="https://s3.bmp.ovh/imgs/2022/06/12/ed0d30a17fef8a38.png" srcset="/img/loading.gif" lazyload alt="重复消息"></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs shell">SET CGO_ENABLED=0<br>SET GOOS=linux<br>SET GOARCH=amd64<br>go build main.go<br></code></pre></td></tr></table></figure>
+
+<h3 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h3><h4 id="不预先编译获得linux程序"><a href="#不预先编译获得linux程序" class="headerlink" title="不预先编译获得linux程序"></a>不预先编译获得linux程序</h4><figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs dockerfile"><span class="hljs-comment"># 基镜像</span><br><span class="hljs-keyword">FROM</span> golang:<span class="hljs-number">1.16</span>-alpine<br><span class="hljs-comment"># 工作目录</span><br><span class="hljs-keyword">WORKDIR</span><span class="language-bash"> /usr/src/app</span><br><span class="hljs-comment"># 复制文件到工作目录中</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> ./go.mod ./</span><br><span class="hljs-comment"># 如果有go.sum 还要加上 COPY ./go.sum/ ./</span><br>// 设置代理<br><span class="hljs-keyword">ENV</span> GOPROXY=https://goproxy.cn<br><span class="hljs-keyword">RUN</span><span class="language-bash"> go mod download</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> *.go ./</span><br>// 编译程序<br><span class="hljs-keyword">RUN</span><span class="language-bash"> go build -o /docker-go-server</span><br>// 暴露端口<br><span class="hljs-keyword">EXPOSE</span> <span class="hljs-number">8081</span><br><span class="hljs-keyword">CMD</span><span class="language-bash"> [<span class="hljs-string">&quot;/docker-go-server&quot;</span>]</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="预先编译获取linux程序"><a href="#预先编译获取linux程序" class="headerlink" title="预先编译获取linux程序"></a>预先编译获取linux程序</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"># 基镜像<br>FROM golang:<span class="hljs-number">1.16</span>-alpine<br># 工作目录<br>WORKDIR /usr/src/app<br># 复制文件到工作目录中<br>COPY ./main ./<br>EXPOSE <span class="hljs-number">8081</span><br>CMD [<span class="hljs-string">&quot;./main&quot;</span>]<br></code></pre></td></tr></table></figure>
+
+<h3 id="运行docker-build"><a href="#运行docker-build" class="headerlink" title="运行docker build"></a>运行docker build</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">docker build --tag docker-go-server:latest .<br></code></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="Java语言"><a href="#Java语言" class="headerlink" title="Java语言"></a>Java语言</h2><h3 id="创建简单SpringBoot应用"><a href="#创建简单SpringBoot应用" class="headerlink" title="创建简单SpringBoot应用"></a>创建简单SpringBoot应用</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@RestController</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">IndexController</span> &#123;<br>    <span class="hljs-type">int</span> <span class="hljs-variable">count</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>    <span class="hljs-type">Logger</span> <span class="hljs-variable">logger</span> <span class="hljs-operator">=</span> Logger.getGlobal();<br>    <span class="hljs-meta">@RequestMapping(path = &quot;/index&quot;,method = RequestMethod.GET)</span><br>    <span class="hljs-keyword">public</span> String <span class="hljs-title function_">getIndex</span><span class="hljs-params">(HttpServletRequest request)</span>&#123;<br>        count++;<br>        <span class="hljs-type">String</span> <span class="hljs-variable">msg</span> <span class="hljs-operator">=</span> String.format(<span class="hljs-string">&quot;%s enter the room&quot;</span>,request.getRequestURL());<br>        logger.info(msg);<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;Hello Dockerfile\n&quot;</span> + String.format(<span class="hljs-string">&quot;已访问%d次&quot;</span>,count);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="编写Dockerfile-1"><a href="#编写Dockerfile-1" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h3><figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs dockerfile"><span class="hljs-keyword">FROM</span> maven:<span class="hljs-number">3.6</span>.<span class="hljs-number">3</span>-adoptopenjdk-<span class="hljs-number">8</span> AS builder<br><span class="hljs-keyword">WORKDIR</span><span class="language-bash"> /app</span><br><span class="hljs-keyword">ADD</span><span class="language-bash"> ./pom.xml pom.xml</span><br><span class="hljs-keyword">ADD</span><span class="language-bash"> ./src src/</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> mvn clean package</span><br><span class="hljs-keyword">FROM</span> openjdk:<span class="hljs-number">8</span>-jre-alpine<br><br><span class="hljs-keyword">COPY</span><span class="language-bash"> --from=builder target/*.jar demo-1.0-SNAPSHOT.jar</span><br><span class="hljs-keyword">EXPOSE</span> <span class="hljs-number">8080</span><br><span class="hljs-keyword">CMD</span><span class="language-bash"> [<span class="hljs-string">&quot;java&quot;</span>,<span class="hljs-string">&quot;-jar&quot;</span>,<span class="hljs-string">&quot;demo-1.0-SNAPSHOT.jar&quot;</span>]</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="运行docker-build-1"><a href="#运行docker-build-1" class="headerlink" title="运行docker build"></a>运行docker build</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">docker build --tag docker-java-server:latest .<br></code></pre></td></tr></table></figure>
+
+<h2 id="发布到docker-hub"><a href="#发布到docker-hub" class="headerlink" title="发布到docker hub"></a>发布到docker hub</h2><ul>
+<li>推送镜像名称规范</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">docker push 注册用户名/镜像名<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>重新打上tag</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shel">docker tag docker-go-server:latest whitestorm/docker-go-server:latest<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>登录</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">docker login<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>push</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shel">docker push whitestorm/docker-go-server<br></code></pre></td></tr></table></figure>
+
 
               
             </div>
@@ -324,7 +348,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  <a href="/categories/Docker/" class="category-chain-item">Docker</a>
   
   
 
@@ -339,7 +363,7 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/RabbitMQ/">#RabbitMQ</a>
+        <a href="/tags/Docker/">#Docker</a>
       
     </div>
   
@@ -351,8 +375,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>RabbitMQ如何保证消息不重复消费</div>
-      <div>http://example.com/2022/06/12/RabbitMQ如何保证消息不重复消费/</div>
+      <div>Docker构建Image并发布到DokcerHub:Java和Go语言</div>
+      <div>http://example.com/2022/06/13/Docker构建Image并发布到DokcerHub-Java和Go语言/</div>
     </div>
     <div class="license-meta">
       
@@ -364,7 +388,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年6月12日</div>
+          <div>2022年6月13日</div>
         </div>
       
       
@@ -394,18 +418,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/06/13/Docker%E6%9E%84%E5%BB%BAImage%E5%B9%B6%E5%8F%91%E5%B8%83%E5%88%B0DokcerHub-Java%E5%92%8CGo%E8%AF%AD%E8%A8%80/" title="Docker构建Image并发布到DokcerHub:Java和Go语言">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Docker构建Image并发布到DokcerHub:Java和Go语言</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/06/11/RabbitMQ%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E5%A4%B1/" title="RabbitMQ如何保证消息不丢失">
-                        <span class="hidden-mobile">RabbitMQ如何保证消息不丢失</span>
+                      <a href="/2022/06/12/RabbitMQ%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%B8%8D%E9%87%8D%E5%A4%8D%E6%B6%88%E8%B4%B9/" title="RabbitMQ如何保证消息不重复消费">
+                        <span class="hidden-mobile">RabbitMQ如何保证消息不重复消费</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
